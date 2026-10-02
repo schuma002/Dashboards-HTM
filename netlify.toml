@@ -1,0 +1,41 @@
+[build]
+  publish = "."
+  command = ""
+
+# Os painéis são arquivos unicos com CSS, JS e imagens embutidos em base64:
+# nao existe pasta de assets para versionar, entao nao ha build step.
+# O Netlify Drop le este arquivo mesmo sem git conectado.
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-DNS-Prefetch-Control = "off"
+    X-Frame-Options = "SAMEORIGIN"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+
+# Os seis paineis sao HTMLs autonomos: todo o CSS e todo o JS estao
+# embutidos no arquivo, e nao ha nenhuma requisicao para fora — nem
+# script, nem fonte, nem imagem de CDN. Isso permite uma CSP fechada
+# em vez da costumeira com varios CDN na lista.
+#
+# 'unsafe-inline' e obrigatorio nos dois primeiros: o Chart.js, a
+# camada anti-inspecao e o bloco de imagens dos vendedores sao
+# scripts embutidos, e nao ha como mover para um .js externo sem
+# reescrever os paineis. O que a CSP faz aqui e travar o que NAO
+# esta no arquivo: nada de CDN novo, nada de frame de terceiro.
+#
+# frame-ancestors 'self' impede que um site de fora embuta o painel
+# (clickjacking). Se algum dia outro sistema seu precisar embutir
+# via iframe, troque por um dominio especifico aqui em vez de
+# remover a diretiva.
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Content-Security-Policy = "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'self'; frame-ancestors 'self'; object-src 'none'"
+
+# Nao foi definido cache longo de proposito: os HTMLs nao tem hash no nome e
+# sao atualizados trocando o arquivo inteiro. Um max-age alto faria o navegador
+# continuar servindo a versao antiga dos dados depois de um novo deploy.
